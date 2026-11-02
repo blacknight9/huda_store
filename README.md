@@ -1,71 +1,93 @@
 # Huda Store
 
-A standalone, mobile-first English and Arabic product catalog with an on-device graphical admin. The public storefront is a static React + TypeScript site; GitHub Pages hosts it for free. The admin is a local Node.js utility that edits catalog files on this computer. It has no online write endpoint, database, or hosted backend.
+Huda Store is a standalone bilingual English/Arabic product catalog. The public storefront is a static React + TypeScript site for GitHub Pages. The graphical online admin lives at `/admin`; a Cloudflare Worker handles GitHub sign-in, short-lived sessions, authorization, and repository writes. Product data, branding, and optimized images live in this repository. There is no database or local administration server.
 
-The included products and illustrations are development samples. Replace them with products and images you have permission to publish before launch. Contact information starts blank.
+## Run and verify locally
 
-## Requirements
-
-- Node.js 20.9 or newer
-- Git installed and configured with your name/email
-- For publishing: a GitHub repository and GitHub CLI credentials or another Git credential helper configured for Git pushes
-
-## Run the storefront
+Requirements: Node.js 20.9+ and npm.
 
 ```sh
 npm ci
 npm run dev
+npm test
+npm run build
 ```
 
-Validate and build a production version with `npm run validate` and `npm run build`. The generated static site is in `dist/`. The GitHub Pages workflow builds and deploys on each push to `main`, or when manually started from GitHub Actions.
+The admin UI is included in the static build at `/admin/`. It becomes operational after the Worker and OAuth configuration below are deployed. In development, `public/admin/config.json` must point to the Worker URL and its configured `ALLOWED_ORIGIN` must match the page origin.
 
-## Open the graphical admin
+## Online admin security model
 
-From this project directory run:
+The **Sign in with GitHub** flow uses GitHub App OAuth authorization code plus PKCE and state. The Worker exchanges the code, verifies GitHub's numeric account ID (`22123586` for `blacknight9`), then discards the OAuth user token. Each repository operation uses a short-lived GitHub App installation token minted inside the Worker from its private key. The browser receives only a signed, two-hour HttpOnly session cookie and a CSRF token held in page memory. The Worker validates the session, exact allowed Origin, and CSRF token on every write. A stale catalog commit SHA returns a conflict, and the Git ref update is non-forced.
 
-```sh
-npm run admin
-```
+No GitHub credential belongs in `public/`, browser storage, or committed config. The Worker rate limits requests per isolate on a best-effort basis; Cloudflare may run multiple isolates, so these in-memory limits are not a global quota. Do not enable preview environments with production secrets.
 
-Open the local URL printed by the command (default `http://127.0.0.1:4179/admin`) and leave the process running while you work. Stop it with Ctrl+C. The server binds only to loopback, requires a random per-run session token and same-origin requests for write actions, and serves no remote access. Do not forward the port to the internet. Close and restart the process if the admin session needs to be reset.
+Sessions are stateless, so logout clears the browser cookie and access ends after the two-hour expiry. A copied session cookie cannot be revoked centrally before expiry without adding shared storage; protect the signed-in device and use the GitHub account's security controls if it is lost.
 
-The admin can add, edit, rename, hide, restore, and delete products; manage bilingual categories; update product availability; change store name, tagline, logo, accent color and contact links; and preview product copy before saving it locally. IDs are permanent numeric references, generated above every reference ever used. Deleting a product leaves its ID reserved. Hidden items are excluded from the public catalog; unavailable items remain visible with their availability label.
+### GitHub App setup
 
-Edits are written to the local project files. They are not public until you use **Publish to GitHub** in the admin. Product images are validated and optimized to WebP with medium and thumbnail variants under `public/images/<reference>/`; store logo images are optimized to `public/images/brand/logo.webp`.
+1. At <https://github.com/settings/apps/new>, create a GitHub App named **Huda Store Admin**. Set the homepage to the catalog URL. Leave webhooks disabled. Enable **Request user authorization (OAuth) during installation**.
+2. Set the callback URL to `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev/auth/callback`. The Worker URL is fixed by its name and your Cloudflare `workers.dev` subdomain. Use that identical callback in `wrangler.jsonc` and the GitHub App settings.
+3. Grant repository permissions: **Contents: Read and write**. Metadata remains read-only. Do not grant Actions, Administration, or other permissions. Install the App only on `blacknight9/huda_store`.
+4. Record the App ID and Client ID. Create a client secret. Under the App installation, get its installation ID (for example, `gh api /user/installations --jq '.installations[] | select(.app_slug=="huda-store-admin") | .id'`). Keep the App private key downloaded securely; do not commit it.
+5. The allowlisted account is pinned in Worker config by immutable GitHub user ID `22123586`. If the authorized human changes, verify the replacement account's numeric ID before changing `ADMIN_GITHUB_USER_ID`.
 
-## Configure GitHub publishing
+### Cloudflare Worker setup
 
-The project folder is not initialized as a Git repository. To set it up, create a new empty GitHub repository, then run these commands from this directory (replace the repository address):
+1. Install Wrangler 4 (the project commands use `npx wrangler@4`) and authenticate:
 
-```sh
-git init
-git branch -M main
-git add .
-git commit -m "Set up Huda Store"
-git remote add origin https://github.com/OWNER/REPOSITORY.git
-git push -u origin main
-```
+   ```sh
+   npx wrangler@4 login
+   npx wrangler@4 whoami
+   ```
 
-If you use GitHub CLI, sign in and connect its credential helper for Git with `gh auth login` followed by `gh auth setup-git`. Alternatively, configure your usual Git credential manager. The admin never reads or stores the credential itself.
+2. Edit `wrangler.jsonc`: replace the App ID, App Client ID, installation ID, Worker callback URL, and public catalog URL placeholders. Keep `GITHUB_OWNER`, `GITHUB_REPO`, and `ADMIN_GITHUB_USER_ID` as ordinary configuration (change them deliberately if ownership changes). The Worker is configured as `huda-store-admin`.
+3. Set Worker-only secrets interactively; never put secret values in shell history, source, or `wrangler.jsonc`:
 
-In GitHub, set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**. Future admin publishing uses the local `git` command and the Git credentials already configured on this computer. It stages project changes, creates a commit, and pushes `main` to `origin`. That push triggers the existing `.github/workflows/deploy.yml` workflow; GitHub Actions builds and deploys to Pages. Publishing does not happen until you press the button.
+   ```sh
+   npx wrangler@4 secret put GITHUB_CLIENT_SECRET
+   npx wrangler@4 secret put GITHUB_APP_PRIVATE_KEY
+   npx wrangler@4 secret put SESSION_SECRET
+   ```
 
-The workflow uses the repository's built-in Pages deployment permissions and contains no personal access token. For a custom domain, set the repository Actions variable `HUDA_SITE_URL` to the site's full HTTPS origin; otherwise SEO URLs are generated from GitHub repository context.
+   `GITHUB_APP_PRIVATE_KEY` is the full PEM private key. Generate a random session signing secret locally with `openssl rand -hex 32` and paste it at Wrangler's prompt.
+4. Set `public/admin/config.json` `apiBase` to `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev` and make sure its `ALLOWED_ORIGIN` matches the Pages origin exactly.
+5. Deploy only after configuring the GitHub App and secrets:
 
-### Security limitations
+   ```sh
+   npm run worker:deploy
+   ```
 
-GitHub Pages is static hosting and does not provide a trusted server that can write to the source repository. Browser-only administration cannot safely hold a GitHub credential: any token delivered to public browser code can be copied by visitors. This project therefore keeps administration on the operator's computer and delegates authentication to Git's configured credential helper. Do not add a GitHub token to frontend code, localStorage, or committed config. Public visitors have no catalog write endpoint. Anyone with access to the administrator's computer and its Git credentials can publish changes.
+6. Check `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev/health` for `{"ok":true}`. This health route exposes no repository data or write capability.
 
-## Product data and images
+The OAuth Client Secret, App private key, and session secret names are `GITHUB_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY`, and `SESSION_SECRET`. Non-secret Worker vars are declared in `wrangler.jsonc`: `GITHUB_OWNER`, `GITHUB_REPO`, `ADMIN_GITHUB_USER_ID`, `GITHUB_APP_ID`, `GITHUB_APP_CLIENT_ID`, `GITHUB_INSTALLATION_ID`, `ALLOWED_ORIGIN`, `PUBLIC_URL`, and `OAUTH_CALLBACK_URL`.
 
-- `src/data/products.json` stores product records.
-- `src/data/used-refs.json` permanently reserves assigned reference numbers, including deleted items.
-- `src/data/settings.json` stores store identity, contact information and bilingual categories.
-- Existing catalog features include search, category filters, product details, favorites, recent views, sharing and WhatsApp/email inquiry links.
-- English and Arabic remain available with RTL layout.
+### GitHub Pages setup and publishing
 
-You can still use `npm run add-product -- ...` as a command-line alternative. The GUI is the recommended product management interface.
+Keep the existing `.github/workflows/deploy.yml`. In the repository, set **Settings → Pages → Build and deployment → Source → GitHub Actions**. The workflow builds the static site and deploys on commits to `main`. Every admin save is one commit through the Worker GitHub API, so it triggers the same workflow. Product data remains in `src/data/`; product variants are stored under `public/images/<reference>/`, and the logo under `public/images/brand/logo.webp`.
 
-## SEO and site metadata
+**Current repository limitation:** this repository was previously verified as private, and GitHub rejected Pages activation because the current account plan does not allow Pages for private repositories. To use free Pages, make the repository public, or keep it private and use an eligible GitHub plan. This project has not changed repository visibility or Pages settings, and nothing has been deployed by this setup. Resolve this plan constraint before enabling publication.
 
-The page metadata and default title use Huda Store. On GitHub Pages, sitemap and robots URLs are generated from the Actions repository context. For a custom domain, configure `HUDA_SITE_URL` as described above. `https://example.com/` is used only as a safe local build fallback when no site URL is configured.
+The Pages URL for the current repository name is `https://blacknight9.github.io/huda_store/`. It will serve only once Pages is eligible and enabled.
+
+### Browser cookie limitation
+
+GitHub Pages on `github.io` and a Worker on `workers.dev` are different sites. The session cookie uses `SameSite=None; Secure; HttpOnly` so credentialed cross-origin admin requests can carry it. Some browsers and privacy modes block third-party cookies, so online login may not persist there. For broad browser compatibility, configure a custom domain for Pages and route the Worker through a sibling subdomain of that same site (then update `PUBLIC_URL`, `ALLOWED_ORIGIN`, `OAUTH_CALLBACK_URL`, `apiBase`, and the GitHub App callback URL). The Pages path and Worker API must still use HTTPS.
+
+### Free-tier and operating limits
+
+The Worker uses no database, and makes a few GitHub API calls per read or write. It uses Cloudflare's free Workers allowance (currently 100,000 requests/day and a 10 ms CPU limit per invocation; verify current limits in your Cloudflare dashboard). Large catalog trees and large image batches can approach CPU, request-body, GitHub API, or Pages build limits. Image files are converted in the browser to WebP variants; the Worker checks WebP signatures, caps each variant at 3 MB, each save at 8 source images, and total optimized variants at 16 MB. Cloudflare's CPU allowance is not configurable on the free plan; if image commits hit CPU limits, reduce the batch size. There is no globally shared rate-limit state without durable storage, intentionally omitted to avoid a database.
+
+## Features and catalog data
+
+The online admin supports adding/editing/renaming products, permanent unique numeric references, hide/restore/delete, optimized multi-image uploads, bilingual categories, availability, store name/tagline/logo/accent/contact settings, and a preview step before each product commit. Deletion permanently reserves its reference. Product edits use optimistic commit checks to avoid stale overwrites. The storefront keeps search, filters, product details, favorites, recent views, sharing, inquiry links, and Arabic RTL support.
+
+- `src/data/products.json`: catalog records.
+- `src/data/used-refs.json`: permanent reference registry.
+- `src/data/settings.json`: store, contact, and category settings.
+- `worker/index.js`: OAuth, sessions, validation, and GitHub API operations.
+- `public/admin/`: static admin interface; it contains no credentials.
+- `wrangler.jsonc`: Worker bindings and non-secret configuration.
+
+## Do not publish from this checkout yet
+
+This checkout has no configured GitHub OAuth App or Cloudflare secrets. Repository authentication alone is not enough to verify the online OAuth flow or deploy the Worker. The Worker and UI can be built and tested with mocks locally; live OAuth, Cloudflare deployment, and Pages deployment must be verified after the required account setup. Do not push until those credentials and the Pages eligibility issue are resolved.
