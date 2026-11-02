@@ -40,18 +40,34 @@ Sessions are stateless, so logout clears the browser cookie and access ends afte
    npx wrangler@4 whoami
    ```
 
-2. Edit `wrangler.jsonc`: replace the App ID, App Client ID, installation ID, Worker callback URL, and public catalog URL placeholders. Keep `GITHUB_OWNER`, `GITHUB_REPO`, and `ADMIN_GITHUB_USER_ID` as ordinary configuration (change them deliberately if ownership changes). The Worker is configured as `huda-store-admin`.
-3. Set Worker-only secrets interactively; never put secret values in shell history, source, or `wrangler.jsonc`:
+2. In **Workers & Pages → huda-store-admin → Settings → Variables and Secrets**, set these production bindings as **Text** variables. `wrangler.jsonc` intentionally has no `vars` block; `keep_vars: true` preserves dashboard variables during `npx wrangler deploy`.
 
-   ```sh
-   npx wrangler@4 secret put GITHUB_CLIENT_SECRET
-   npx wrangler@4 secret put GITHUB_APP_PRIVATE_KEY
-   npx wrangler@4 secret put SESSION_SECRET
-   ```
+   | Variable | Production value |
+   | --- | --- |
+   | `GITHUB_OWNER` | `blacknight9` |
+   | `GITHUB_REPO` | `huda_store` |
+   | `ADMIN_GITHUB_USER_ID` | `22123586` |
+   | `GITHUB_APP_ID` | App ID from the GitHub App settings |
+   | `GITHUB_APP_CLIENT_ID` | Client ID from the GitHub App settings |
+   | `GITHUB_INSTALLATION_ID` | Installation ID for the app installed on this repository |
+   | `ALLOWED_ORIGIN` | `https://blacknight9.github.io` (origin only; no repository path) |
+   | `PUBLIC_URL` | `https://blacknight9.github.io/huda_store` (no trailing slash) |
+   | `OAUTH_CALLBACK_URL` | `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev/auth/callback` |
 
-   `GITHUB_APP_PRIVATE_KEY` is the full PEM private key. Generate a random session signing secret locally with `openssl rand -hex 32` and paste it at Wrangler's prompt.
-4. Set `public/admin/config.json` `apiBase` to `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev` and make sure its `ALLOWED_ORIGIN` matches the Pages origin exactly.
-5. Deploy only after configuring the GitHub App and secrets:
+   Keep all nine values in the **Production** environment. Change the owner/repo and corresponding IDs/URLs there if repository ownership or domains change. Do not restore a `vars` object to `wrangler.jsonc` unless you intentionally want source-controlled values to own those Worker variables. The Worker name stays `huda-store-admin`.
+
+3. Add the following three items in the same **Variables and Secrets** screen, each with type **Secret** in the **Production** environment. Enter values in Cloudflare's secret-value field; do not add values to GitHub Actions variables, `.env` files, `wrangler.jsonc`, or source control.
+
+   | Secret name | Value to enter |
+   | --- | --- |
+   | `GITHUB_CLIENT_SECRET` | OAuth client secret from the GitHub App settings |
+   | `GITHUB_APP_PRIVATE_KEY` | Entire PEM private key generated for the GitHub App, including its `BEGIN` and `END` lines |
+   | `SESSION_SECRET` | A new random signing secret; generate one with `openssl rand -hex 32` and enter the output directly into Cloudflare |
+
+   The `secrets.required` list in `wrangler.jsonc` checks that all three names exist before a Wrangler deploy. Cloudflare stores these as encrypted Worker secrets and does not reveal their values after saving. Never commit or paste the values into a public log.
+
+4. Set `public/admin/config.json` `apiBase` to `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev` and make sure the Worker's `ALLOWED_ORIGIN` matches the Pages origin exactly.
+5. Deploy only after configuring the GitHub App, production variables, and all three secrets:
 
    ```sh
    npm run worker:deploy
@@ -59,7 +75,7 @@ Sessions are stateless, so logout clears the browser cookie and access ends afte
 
 6. Check `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev/health` for `{"ok":true}`. This health route exposes no repository data or write capability.
 
-The OAuth Client Secret, App private key, and session secret names are `GITHUB_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY`, and `SESSION_SECRET`. Non-secret Worker vars are declared in `wrangler.jsonc`: `GITHUB_OWNER`, `GITHUB_REPO`, `ADMIN_GITHUB_USER_ID`, `GITHUB_APP_ID`, `GITHUB_APP_CLIENT_ID`, `GITHUB_INSTALLATION_ID`, `ALLOWED_ORIGIN`, `PUBLIC_URL`, and `OAUTH_CALLBACK_URL`.
+The OAuth Client Secret, App private key, and session secret names are `GITHUB_CLIENT_SECRET`, `GITHUB_APP_PRIVATE_KEY`, and `SESSION_SECRET`. Their names are declared in `wrangler.jsonc`; their values and all nine non-secret runtime variables are configured in the Cloudflare dashboard. `keep_vars: true` prevents code deployments from replacing those dashboard variables.
 
 ### GitHub Pages setup and publishing
 

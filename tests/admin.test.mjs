@@ -74,3 +74,9 @@ test('online admin has an accessible login and mobile layout; static UI contains
   const html=await readFile(new URL('../public/admin/index.html',import.meta.url),'utf8'),js=await readFile(new URL('../public/admin/admin.js',import.meta.url),'utf8'),css=await readFile(new URL('../public/admin/admin.css',import.meta.url),'utf8');
   assert.match(html,/name="viewport"/);assert.match(html,/Sign in with GitHub/);assert.match(html,/aria-label="Admin sections"/);assert.match(css,/@media\(max-width:700px\)/);assert.doesNotMatch(js,/gho_[A-Za-z0-9]{10,}|github_pat_/);
 });
+
+test('Wrangler preserves Cloudflare dashboard variables and requires the three Worker secrets',async()=>{
+  const source=await readFile(new URL('../wrangler.jsonc',import.meta.url),'utf8'),config=JSON.parse(source);
+  assert.equal(config.name,'huda-store-admin');assert.equal(config.main,'worker/index.js');assert.equal(config.keep_vars,true);assert.equal('vars' in config,false);assert.doesNotMatch(source,/REPLACE_WITH/);
+  assert.deepEqual([...config.secrets.required].sort(),['GITHUB_APP_PRIVATE_KEY','GITHUB_CLIENT_SECRET','SESSION_SECRET'].sort());
+});

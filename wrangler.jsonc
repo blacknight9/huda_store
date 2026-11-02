@@ -4,17 +4,7 @@
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
-  "vars": {
-    "GITHUB_OWNER": "blacknight9",
-    "GITHUB_REPO": "huda_store",
-    "ADMIN_GITHUB_USER_ID": "22123586",
-    "GITHUB_APP_ID": "REPLACE_WITH_GITHUB_APP_ID",
-    "GITHUB_APP_CLIENT_ID": "REPLACE_WITH_GITHUB_APP_CLIENT_ID",
-    "GITHUB_INSTALLATION_ID": "REPLACE_WITH_INSTALLATION_ID",
-    "ALLOWED_ORIGIN": "https://blacknight9.github.io",
-    "PUBLIC_URL": "https://blacknight9.github.io/huda_store",
-    "OAUTH_CALLBACK_URL": "https://huda-store-admin.REPLACE_WITH_CLOUDFLARE_SUBDOMAIN.workers.dev/auth/callback"
-  },
+  "keep_vars": true,
   "secrets": {
     "required": [
       "GITHUB_CLIENT_SECRET",
