@@ -1,203 +1,198 @@
 [
- {
-  "id": "10001",
-  "slug": "sculpted-ceramic-vase",
-  "name": "Sculpted Ceramic Vase",
-  "nameAr": "مزهرية خزفية منحوتة",
-  "category": "Home objects",
-  "categoryAr": "قطع منزلية",
-  "keywords": [
-   "ceramic",
-   "vase",
-   "handmade",
-   "sand"
-  ],
-  "description": "A softly sculpted ceramic vessel with a quiet, tactile finish. Made to hold a single branch or stand beautifully on its own.",
-  "descriptionAr": "إناء خزفي بتصميم انسيابي ولمسة هادئة. يحتضن غصناً واحداً أو يزيّن المكان بتفاصيله وحدها.",
-  "price": "Price on request",
-  "status": "available",
-  "images": [
-   "/images/10001/01.svg",
-   "/images/10001/02.svg"
-  ],
-  "variants": {
-   "colors": [
-    "Sand",
-    "Chalk"
-   ]
+  {
+    "id": "10001",
+    "name": "Sculpted Ceramic Vase",
+    "nameAr": "مزهرية خزفية منحوتة",
+    "category": "Home objects",
+    "categoryAr": "قطع منزلية",
+    "description": "A softly sculpted ceramic vessel with a quiet, tactile finish. Made to hold a single branch or stand beautifully on its own.",
+    "descriptionAr": "إناء خزفي بتصميم انسيابي ولمسة هادئة. يحتضن غصناً واحداً أو يزيّن المكان بتفاصيله وحدها.",
+    "keywords": [
+      "ceramic",
+      "vase",
+      "handmade",
+      "sand"
+    ],
+    "price": "Price on request",
+    "status": "available",
+    "visible": true,
+    "images": [
+      "/images/10001/01.svg",
+      "/images/10001/02.svg",
+      "/images/10001/01.webp"
+    ],
+    "slug": "sculpted-ceramic-vase"
   },
-  "sample": true
- },
- {
-  "id": "10002",
-  "slug": "woven-market-tote",
-  "name": "Woven Market Tote",
-  "nameAr": "حقيبة سوق منسوجة",
-  "category": "Bags & accessories",
-  "categoryAr": "حقائب وإكسسوارات",
-  "keywords": [
-   "woven",
-   "bag",
-   "natural",
-   "carry"
-  ],
-  "description": "An easy everyday carryall woven from natural fibers, finished with sturdy handles and a roomy open top.",
-  "descriptionAr": "حقيبة يومية عملية من ألياف طبيعية، بمقابض متينة ومساحة رحبة.",
-  "status": "available",
-  "images": [
-   "/images/10002/01.svg",
-   "/images/10002/02.svg"
-  ],
-  "variants": {
-   "colors": [
-    "Natural"
-   ]
+  {
+    "id": "10002",
+    "slug": "woven-market-tote",
+    "name": "Woven Market Tote",
+    "nameAr": "حقيبة سوق منسوجة",
+    "category": "Bags & accessories",
+    "categoryAr": "حقائب وإكسسوارات",
+    "keywords": [
+      "woven",
+      "bag",
+      "natural",
+      "carry"
+    ],
+    "description": "An easy everyday carryall woven from natural fibers, finished with sturdy handles and a roomy open top.",
+    "descriptionAr": "حقيبة يومية عملية من ألياف طبيعية، بمقابض متينة ومساحة رحبة.",
+    "status": "available",
+    "images": [
+      "/images/10002/01.svg",
+      "/images/10002/02.svg"
+    ],
+    "variants": {
+      "colors": [
+        "Natural"
+      ]
+    },
+    "sample": true
   },
-  "sample": true
- },
- {
-  "id": "10003",
-  "slug": "everyday-linen-shirt",
-  "name": "Everyday Linen Shirt",
-  "nameAr": "قميص كتان يومي",
-  "category": "Clothing",
-  "categoryAr": "ملابس",
-  "keywords": [
-   "linen",
-   "shirt",
-   "relaxed",
-   "clothing"
-  ],
-  "description": "A relaxed-cut linen shirt with a soft drape and the kind of thoughtful details that make it a wardrobe staple.",
-  "descriptionAr": "قميص كتان بقصّة مريحة وانسيابية، وتفاصيل مدروسة تجعله قطعة أساسية.",
-  "price": "Price on request",
-  "status": "on-request",
-  "images": [
-   "/images/10003/01.svg",
-   "/images/10003/02.svg"
-  ],
-  "variants": {
-   "sizes": [
-    "S",
-    "M",
-    "L",
-    "XL"
-   ],
-   "colors": [
-    "Oat",
-    "Olive"
-   ]
+  {
+    "id": "10003",
+    "slug": "everyday-linen-shirt",
+    "name": "Everyday Linen Shirt",
+    "nameAr": "قميص كتان يومي",
+    "category": "Clothing",
+    "categoryAr": "ملابس",
+    "keywords": [
+      "linen",
+      "shirt",
+      "relaxed",
+      "clothing"
+    ],
+    "description": "A relaxed-cut linen shirt with a soft drape and the kind of thoughtful details that make it a wardrobe staple.",
+    "descriptionAr": "قميص كتان بقصّة مريحة وانسيابية، وتفاصيل مدروسة تجعله قطعة أساسية.",
+    "price": "Price on request",
+    "status": "on-request",
+    "images": [
+      "/images/10003/01.svg",
+      "/images/10003/02.svg"
+    ],
+    "variants": {
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "colors": [
+        "Oat",
+        "Olive"
+      ]
+    },
+    "sample": true
   },
-  "sample": true
- },
- {
-  "id": "10004",
-  "slug": "brass-arc-earrings",
-  "name": "Brass Arc Earrings",
-  "nameAr": "أقراط قوس نحاسية",
-  "category": "Jewelry",
-  "categoryAr": "مجوهرات",
-  "keywords": [
-   "brass",
-   "earrings",
-   "jewelry",
-   "gold"
-  ],
-  "description": "Sculptural arcs in brushed brass. Light enough for all day, distinctive enough to finish a look.",
-  "descriptionAr": "أقواس نحاسية بلمسة مصقولة. خفيفة طوال اليوم ومميزة لإكمال إطلالتك.",
-  "status": "available",
-  "images": [
-   "/images/10004/01.svg",
-   "/images/10004/02.svg"
-  ],
-  "sample": true
- },
- {
-  "id": "10005",
-  "slug": "ribbed-glass-carafe",
-  "name": "Ribbed Glass Carafe",
-  "nameAr": "قارورة زجاجية مخططة",
-  "category": "Home objects",
-  "categoryAr": "قطع منزلية",
-  "keywords": [
-   "glass",
-   "carafe",
-   "dining",
-   "table"
-  ],
-  "description": "A clear ribbed glass carafe that catches the light at the table. A simple detail for everyday rituals.",
-  "descriptionAr": "قارورة زجاجية شفافة بخطوط تلتقط الضوء على المائدة. لمسة بسيطة لطقوسك اليومية.",
-  "status": "available",
-  "images": [
-   "/images/10005/01.svg",
-   "/images/10005/02.svg"
-  ],
-  "sample": true
- },
- {
-  "id": "10006",
-  "slug": "leather-card-holder",
-  "name": "Leather Card Holder",
-  "nameAr": "حافظة بطاقات جلدية",
-  "category": "Bags & accessories",
-  "categoryAr": "حقائب وإكسسوارات",
-  "keywords": [
-   "leather",
-   "wallet",
-   "card",
-   "accessory"
-  ],
-  "description": "A slim, responsibly sourced leather card holder with just enough room for your daily essentials.",
-  "descriptionAr": "حافظة بطاقات جلدية رفيعة من جلد مختار بعناية، بمساحة تكفي احتياجاتك اليومية.",
-  "status": "on-request",
-  "images": [
-   "/images/10006/01.svg",
-   "/images/10006/02.svg"
-  ],
-  "sample": true
- },
- {
-  "id": "10007",
-  "slug": "cotton-table-runner",
-  "name": "Cotton Table Runner",
-  "nameAr": "مفرش طاولة قطني",
-  "category": "Textiles",
-  "categoryAr": "منسوجات",
-  "keywords": [
-   "cotton",
-   "table",
-   "textile",
-   "home"
-  ],
-  "description": "Soft washed cotton with a fine woven edge. Designed to bring an effortless layer to the dining table.",
-  "descriptionAr": "قطن ناعم مغسول بحافة منسوجة. طبقة بسيطة تضفي جمالاً على مائدة الطعام.",
-  "status": "available",
-  "images": [
-   "/images/10007/01.svg",
-   "/images/10007/02.svg"
-  ],
-  "sample": true
- },
- {
-  "id": "10008",
-  "slug": "stoneware-coffee-cup",
-  "name": "Stoneware Coffee Cup",
-  "nameAr": "كوب قهوة حجري",
-  "category": "Home objects",
-  "categoryAr": "قطع منزلية",
-  "keywords": [
-   "stoneware",
-   "cup",
-   "coffee",
-   "ceramic"
-  ],
-  "description": "A hand-finished stoneware cup with a comfortable shape and a glaze that makes every piece unique.",
-  "descriptionAr": "كوب حجري بتشطيب يدوي وشكل مريح، وطلاء يجعل كل قطعة فريدة.",
-  "status": "available",
-  "images": [
-   "/images/10008/01.svg",
-   "/images/10008/02.svg"
-  ],
-  "sample": true
- }
+  {
+    "id": "10004",
+    "slug": "brass-arc-earrings",
+    "name": "Brass Arc Earrings",
+    "nameAr": "أقراط قوس نحاسية",
+    "category": "Jewelry",
+    "categoryAr": "مجوهرات",
+    "keywords": [
+      "brass",
+      "earrings",
+      "jewelry",
+      "gold"
+    ],
+    "description": "Sculptural arcs in brushed brass. Light enough for all day, distinctive enough to finish a look.",
+    "descriptionAr": "أقواس نحاسية بلمسة مصقولة. خفيفة طوال اليوم ومميزة لإكمال إطلالتك.",
+    "status": "available",
+    "images": [
+      "/images/10004/01.svg",
+      "/images/10004/02.svg"
+    ],
+    "sample": true
+  },
+  {
+    "id": "10005",
+    "slug": "ribbed-glass-carafe",
+    "name": "Ribbed Glass Carafe",
+    "nameAr": "قارورة زجاجية مخططة",
+    "category": "Home objects",
+    "categoryAr": "قطع منزلية",
+    "keywords": [
+      "glass",
+      "carafe",
+      "dining",
+      "table"
+    ],
+    "description": "A clear ribbed glass carafe that catches the light at the table. A simple detail for everyday rituals.",
+    "descriptionAr": "قارورة زجاجية شفافة بخطوط تلتقط الضوء على المائدة. لمسة بسيطة لطقوسك اليومية.",
+    "status": "available",
+    "images": [
+      "/images/10005/01.svg",
+      "/images/10005/02.svg"
+    ],
+    "sample": true
+  },
+  {
+    "id": "10006",
+    "slug": "leather-card-holder",
+    "name": "Leather Card Holder",
+    "nameAr": "حافظة بطاقات جلدية",
+    "category": "Bags & accessories",
+    "categoryAr": "حقائب وإكسسوارات",
+    "keywords": [
+      "leather",
+      "wallet",
+      "card",
+      "accessory"
+    ],
+    "description": "A slim, responsibly sourced leather card holder with just enough room for your daily essentials.",
+    "descriptionAr": "حافظة بطاقات جلدية رفيعة من جلد مختار بعناية، بمساحة تكفي احتياجاتك اليومية.",
+    "status": "on-request",
+    "images": [
+      "/images/10006/01.svg",
+      "/images/10006/02.svg"
+    ],
+    "sample": true
+  },
+  {
+    "id": "10007",
+    "slug": "cotton-table-runner",
+    "name": "Cotton Table Runner",
+    "nameAr": "مفرش طاولة قطني",
+    "category": "Textiles",
+    "categoryAr": "منسوجات",
+    "keywords": [
+      "cotton",
+      "table",
+      "textile",
+      "home"
+    ],
+    "description": "Soft washed cotton with a fine woven edge. Designed to bring an effortless layer to the dining table.",
+    "descriptionAr": "قطن ناعم مغسول بحافة منسوجة. طبقة بسيطة تضفي جمالاً على مائدة الطعام.",
+    "status": "available",
+    "images": [
+      "/images/10007/01.svg",
+      "/images/10007/02.svg"
+    ],
+    "sample": true
+  },
+  {
+    "id": "10008",
+    "slug": "stoneware-coffee-cup",
+    "name": "Stoneware Coffee Cup",
+    "nameAr": "كوب قهوة حجري",
+    "category": "Home objects",
+    "categoryAr": "قطع منزلية",
+    "keywords": [
+      "stoneware",
+      "cup",
+      "coffee",
+      "ceramic"
+    ],
+    "description": "A hand-finished stoneware cup with a comfortable shape and a glaze that makes every piece unique.",
+    "descriptionAr": "كوب حجري بتشطيب يدوي وشكل مريح، وطلاء يجعل كل قطعة فريدة.",
+    "status": "available",
+    "images": [
+      "/images/10008/01.svg",
+      "/images/10008/02.svg"
+    ],
+    "sample": true
+  }
 ]
