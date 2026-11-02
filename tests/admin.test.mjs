@@ -75,6 +75,13 @@ test('online admin has an accessible login and mobile layout; static UI contains
   assert.match(html,/name="viewport"/);assert.match(html,/Sign in with GitHub/);assert.match(html,/aria-label="Admin sections"/);assert.match(css,/@media\(max-width:700px\)/);assert.doesNotMatch(js,/gho_[A-Za-z0-9]{10,}|github_pat_/);
 });
 
+test('online admin points to the configured Huda Store Worker without placeholders',async()=>{
+  const config=JSON.parse(await readFile(new URL('../public/admin/config.json',import.meta.url),'utf8'));
+  assert.deepEqual(Object.keys(config),['apiBase']);
+  assert.equal(config.apiBase,'https://huda-store-admin.alloy212.workers.dev');
+  assert.doesNotMatch(config.apiBase,/REPLACE_WITH|blacknight9|apptikar/);
+});
+
 test('Wrangler preserves Cloudflare dashboard variables and requires the three Worker secrets',async()=>{
   const source=await readFile(new URL('../wrangler.jsonc',import.meta.url),'utf8'),config=JSON.parse(source);
   assert.equal(config.name,'huda-store-admin');assert.equal(config.main,'worker/index.js');assert.equal(config.keep_vars,true);assert.equal('vars' in config,false);assert.doesNotMatch(source,/REPLACE_WITH/);
