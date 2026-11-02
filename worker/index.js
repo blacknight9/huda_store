@@ -72,12 +72,18 @@ async function finishLogin(request,env) {
   const clear=setOauthCookie(env,'',0);
   if(!limited(request,'oauth-callback',24,60*60_000))return new Response('Too many authorization attempts.',{status:429,headers:{'Set-Cookie':clear,'Cache-Control':'no-store'}});
   if(!code||!state||extra.length||!savedState||!safeEqual(state,savedState)||Number(expText)<=Date.now()/1000||!safeEqual(sig||'',await hmac(env.SESSION_SECRET,unsigned)))return new Response('OAuth state check failed. Please sign in again.',{status:400,headers:{'Set-Cookie':clear,'Cache-Control':'no-store'}});
-  const tokenResponse=await fetch('https://github.com/login/oauth/access_token',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({client_id:env.GITHUB_APP_CLIENT_ID,client_secret:env.GITHUB_CLIENT_SECRET,code,redirect_uri:env.OAUTH_CALLBACK_URL,code_verifier:verifier})});
-  const tokenData=await tokenResponse.json();
-  if(!tokenResponse.ok||!tokenData.access_token)return new Response('GitHub authorization failed. Please try again.',{status:502,headers:{'Set-Cookie':clear,'Cache-Control':'no-store'}});
-  const userResponse=await fetch('https://api.github.com/user',{headers:{Authorization:`Bearer ${tokenData.access_token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2026-03-10','User-Agent':'Huda-Store-Admin'}});
-  const user=await userResponse.json();
-  if(!userResponse.ok||String(user.id)!==String(env.ADMIN_GITHUB_USER_ID))return new Response(null,{status:302,headers:{Location:`${env.PUBLIC_URL}/admin/?error=unauthorized`,'Set-Cookie':clear,'Cache-Control':'no-store'}});
+  let tokenData,user;
+  try {
+    const tokenResponse=await fetch('https://github.com/login/oauth/access_token',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({client_id:env.GITHUB_APP_CLIENT_ID,client_secret:env.GITHUB_CLIENT_SECRET,code,redirect_uri:env.OAUTH_CALLBACK_URL,code_verifier:verifier})});
+    tokenData=await tokenResponse.json().catch(()=>({}));
+    if(!tokenResponse.ok||!tokenData.access_token)return new Response('GitHub authorization failed. Please try again.',{status:502,headers:{'Set-Cookie':clear,'Cache-Control':'no-store'}});
+    const userResponse=await fetch('https://api.github.com/user',{headers:{Authorization:`Bearer ${tokenData.access_token}`,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2026-03-10','User-Agent':'Huda-Store-Admin'}});
+    user=await userResponse.json().catch(()=>({}));
+    if(!userResponse.ok)return new Response('GitHub authorization failed. Please try again.',{status:502,headers:{'Set-Cookie':clear,'Cache-Control':'no-store'}});
+  } catch {
+    return new Response('GitHub authorization is temporarily unavailable. Please try again.',{status:502,headers:{'Set-Cookie':clear,'Cache-Control':'no-store'}});
+  }
+  if(String(user.id)!==String(env.ADMIN_GITHUB_USER_ID))return new Response(null,{status:302,headers:{Location:`${env.PUBLIC_URL}/admin/?error=unauthorized`,'Set-Cookie':clear,'Cache-Control':'no-store'}});
   // Discard the OAuth user token immediately. Repository API calls use short-lived
   // installation tokens minted inside the Worker from the App private-key secret.
   const session=await makeSession(env,user.id,user.login);
@@ -135,7 +141,7 @@ function validateProduct(product,products,id='') {
   for(const key of ['name','nameAr','category','categoryAr','description','descriptionAr'])if(typeof product[key]!=='string'||!product[key].trim()||product[key].length>2000)throw new Error(`${key} is required and must be under 2,000 characters.`);
   if(!['available','on-request','unavailable'].includes(product.status))throw new Error('Invalid availability status.');
   if(!Array.isArray(product.keywords)||product.keywords.length>40||product.keywords.some(x=>typeof x!=='string'||x.length>80))throw new Error('Invalid product keywords.');
-  if(!Array.isArray(product.images)||product.images.length<1||product.images.length>24||product.images.some(x=>typeof x!=='string'||!x.startsWith(`/images/${id}/`)||x.includes('..')))throw new Error('Product images must stay under this product reference.');
+  if(!Array.isArray(product.images)||product.images.length<1||product.images.length>8||new Set(product.images).size!==product.images.length||product.images.some(x=>typeof x!=='string'||!x.startsWith(`/images/${id}/`)||x.includes('..')))throw new Error('Products need 1–8 unique images stored under their product reference.');
   if(products.some(p=>p.id!==id&&p.slug===product.slug))throw new Error('That product URL already exists.');
 }
 function decodeImage64(data) {
@@ -150,7 +156,8 @@ function validateVariants(upload) {
   const result={};for(const [key,file] of Object.entries({full:upload.full,medium:upload.medium,thumbnail:upload.thumbnail}))result[key]=b64(decodeImage64(file));return result;
 }
 function imagePathList(id,basePath) {
-  const base=basePath.replace(/^\//,''); return [base,base.replace(/\.webp$/,'-md.webp'),base.replace(/\.webp$/,'-thumb.webp')];
+  const relative=String(basePath).replace(/^\/+/,'');const base=relative.startsWith('public/')?relative:`public/${relative}`;
+  return base.endsWith('.webp')?[base,base.replace(/\.webp$/,'-md.webp'),base.replace(/\.webp$/,'-thumb.webp')]:[base];
 }
 async function productsWrite(env,token,body,state) {
   if(!Array.isArray(state.usedRefs)||new Set(state.usedRefs).size!==state.usedRefs.length||state.usedRefs.some(x=>typeof x!=='string'||!/^\d{5,}$/.test(x))||!Array.isArray(state.products)||state.products.some(p=>!state.usedRefs.includes(p.id))||new Set(state.products.map(p=>p.id)).size!==state.products.length)throw new Error('Catalog references are inconsistent. Repair the catalog before editing.');
@@ -171,20 +178,29 @@ async function productsWrite(env,token,body,state) {
       if(!old) { id=String(Math.max(10000,...refs.map(Number))+1);refs.push(id); }
       const kept=Array.isArray(body.product.images)?body.product.images:[];
       const oldImages=old?.images||[];
-      if(kept.some(image=>!oldImages.includes(image)))throw new Error('An image path is not part of this product.');
+      if(new Set(kept).size!==kept.length||kept.some(image=>!oldImages.includes(image)))throw new Error('An image path is duplicated or is not part of this product.');
       for(const image of oldImages)if(!kept.includes(image))deletions.push(...imagePathList(id,image));
       const uploads=body.uploads||[];if(!Array.isArray(uploads)||uploads.length>8)throw new Error('Upload no more than 8 images at once.');
-      let total=0;const occupied=new Set(oldImages.map(x=>x.match(/\/(\d+)\.webp$/)?.[1]).filter(Boolean));let next=1;
-      const imagePaths=[...kept];
+      if(kept.length+uploads.length>8)throw new Error('A product can have no more than 8 images. Remove an image before adding another.');
+      const imageOrder=body.imageOrder===undefined?[...kept,...uploads.map((_,i)=>`upload:${i}`)]:body.imageOrder;
+      if(!Array.isArray(imageOrder)||imageOrder.length!==kept.length+uploads.length||new Set(imageOrder).size!==imageOrder.length)throw new Error('Image order must include each existing image and upload exactly once.');
+      const orderedUploads=imageOrder.filter(item=>typeof item==='string'&&/^upload:\d+$/.test(item)).map(item=>Number(item.slice(7)));
+      if(imageOrder.some(item=>typeof item!=='string'||(!kept.includes(item)&&!/^upload:\d+$/.test(item)))||kept.some(image=>!imageOrder.includes(image))||orderedUploads.length!==uploads.length||new Set(orderedUploads).size!==uploads.length||orderedUploads.some(index=>index>=uploads.length))throw new Error('Image order contains an unknown, missing, or repeated image.');
+      let total=0;const occupied=new Set(oldImages.map(x=>x.match(/\/(\d+)\.webp$/)?.[1]).filter(Boolean));
+      for(const path of state.entries.keys()){const match=path.match(new RegExp(`^public/images/${id}/(\\d+)\\.webp$`));if(match)occupied.add(match[1]);}
+      let next=1;
+      const uploadedPaths=[];
       for(const upload of uploads) {
         while(occupied.has(String(next).padStart(2,'0')))next++;
         const stem=String(next++).padStart(2,'0');occupied.add(stem);
         const variants=validateVariants(upload);total+=Object.values(variants).reduce((n,x)=>n+x.length*.75,0);if(total>MAX_UPLOAD_BYTES)throw new Error('Combined optimized image uploads must be under 16 MB.');
         const base=`public/images/${id}/${stem}.webp`;
         for(const [variant,suffix] of [['full',''],['medium','-md'],['thumbnail','-thumb']])files[`${base.replace('.webp',suffix+'.webp')}`]={content:variants[variant],encoding:'base64'};
-        imagePaths.push(`/${base.replace(/^public\//,'')}`);
+        uploadedPaths.push(`/${base.replace(/^public\//,'')}`);
       }
+      const imagePaths=imageOrder.map(item=>item.startsWith('upload:')?uploadedPaths[Number(item.slice(7))]:item);
       const product={...body.product,id,slug:slugify(body.product.name),images:imagePaths,keywords:Array.isArray(body.product.keywords)?body.product.keywords:[],visible:body.product.visible!==false};
+      if(product.price!==undefined&&(typeof product.price!=='string'||product.price.length>120))throw new Error('Price label must be text under 120 characters.');
       delete product.uploads; if(uploads.length)delete product.sample;
       validateProduct(product,products,id);
       if(old)products[at]=product;else products.push(product);
@@ -248,15 +264,17 @@ export async function fetchHandler(request,env) {
     }
     if(!url.pathname.startsWith('/api/'))return json({error:'Not found.'},404);
     const write=request.method==='POST';if(!write&&request.method!=='GET')return json({error:'Method not allowed.'},405);
+    const route=url.pathname;
+    if(!((route==='/api/catalog'&&request.method==='GET')||((route==='/api/products'||route==='/api/categories'||route==='/api/settings')&&write)))return json({error:'Not found.'},404);
     const auth=await authorized(request,env,write);if(auth.response)return corsResponse(request,env,auth.response);
     if(!limited(request,'read',120,60_000))return corsResponse(request,env,json({error:'Too many requests.'},429));
+    const body=write?await readBody(request):null;
     const token=await installationToken(env);
     const state=await repoState(env,token);
-    if(url.pathname==='/api/catalog'&&request.method==='GET')return corsResponse(request,env,json({commitSha:state.head,products:state.products,usedRefs:state.usedRefs,settings:state.settings,categories:state.settings.categories||[]}));
-    if(url.pathname==='/api/products'&&write) {const body=await readBody(request);return corsResponse(request,env,json(await productsWrite(env,token,body,state)));}
-    if(url.pathname==='/api/categories'&&write) {const body=await readBody(request);return corsResponse(request,env,json(await categoriesWrite(env,token,body,state)));}
-    if(url.pathname==='/api/settings'&&write) {const body=await readBody(request);return corsResponse(request,env,json(await settingsWrite(env,token,body,state)));}
-    return corsResponse(request,env,json({error:'Not found.'},404));
+    if(route==='/api/catalog'&&request.method==='GET')return corsResponse(request,env,json({commitSha:state.head,products:state.products,usedRefs:state.usedRefs,settings:state.settings,categories:state.settings.categories||[]}));
+    if(route==='/api/products')return corsResponse(request,env,json(await productsWrite(env,token,body,state)));
+    if(route==='/api/categories')return corsResponse(request,env,json(await categoriesWrite(env,token,body,state)));
+    if(route==='/api/settings')return corsResponse(request,env,json(await settingsWrite(env,token,body,state)));
   } catch(error) {const status=error.status||400;return corsResponse(request,env,json({error:error.message||'Request failed.'},status));}
 }
 
