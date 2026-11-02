@@ -1,0 +1,1 @@
+export type Product = { id: string; slug: string; name: string; nameAr: string; category: string; categoryAr: string; keywords: string[]; description: string; descriptionAr: string; price?: string; status: 'available' | 'on-request' | 'unavailable'; images: string[]; sample?: boolean; visible?: boolean; variants?: { sizes?: string[]; colors?: string[] } };
