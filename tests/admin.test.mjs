@@ -5,10 +5,10 @@ import { generateKeyPairSync } from 'node:crypto';
 import worker from '../worker/index.js';
 
 const keys=generateKeyPairSync('rsa',{modulusLength:2048,privateKeyEncoding:{type:'pkcs1',format:'pem'},publicKeyEncoding:{type:'spki',format:'pem'}});
-const env={SESSION_SECRET:'test-session-secret-that-is-at-least-32-bytes-long',GITHUB_CLIENT_SECRET:'mock-client-secret',GITHUB_APP_CLIENT_ID:'mock-client-id',GITHUB_APP_ID:'12345',GITHUB_APP_PRIVATE_KEY:keys.privateKey,GITHUB_INSTALLATION_ID:'99',ADMIN_GITHUB_USER_ID:'22123586',GITHUB_OWNER:'blacknight9',GITHUB_REPO:'huda_store',ALLOWED_ORIGIN:'https://blacknight9.github.io',PUBLIC_URL:'https://blacknight9.github.io/huda_store',OAUTH_CALLBACK_URL:'https://huda-store-admin.test/auth/callback'};
+const env={SESSION_SECRET:'test-session-secret-that-is-at-least-32-bytes-long',GITHUB_CLIENT_SECRET:'mock-client-secret',GITHUB_APP_CLIENT_ID:'mock-client-id',GITHUB_APP_ID:'12345',GITHUB_APP_PRIVATE_KEY:keys.privateKey,GITHUB_INSTALLATION_ID:'99',ADMIN_GITHUB_USER_ID:'351334834',GITHUB_OWNER:'hudastoreus',GITHUB_REPO:'huda_store',ALLOWED_ORIGIN:'https://hudastoreus.github.io',PUBLIC_URL:'https://hudastoreus.github.io/huda_store',OAUTH_CALLBACK_URL:'https://huda-store-admin.test/auth/callback'};
 const req=(path,{method='GET',headers={},body}={})=>new Request(`https://huda-store-admin.test${path}`,{method,headers,body});
-async function loginAs(id='22123586'){
-  const old=globalThis.fetch;globalThis.fetch=async url=>String(url).includes('login/oauth/access_token')?Response.json({access_token:'mock-user-token'}):Response.json({id:Number(id),login:id==='22123586'?'blacknight9':'intruder'});
+async function loginAs(id='351334834'){
+  const old=globalThis.fetch;globalThis.fetch=async url=>String(url).includes('login/oauth/access_token')?Response.json({access_token:'mock-user-token'}):Response.json({id:Number(id),login:id==='351334834'?'hudastoreus':'intruder'});
   try{const start=await worker.fetch(req('/auth/login'),env),authorize=new URL(start.headers.get('Location')),oauth=start.headers.get('Set-Cookie').split(';')[0];assert.equal(authorize.searchParams.get('code_challenge_method'),'S256');assert.equal(authorize.searchParams.get('code_challenge').length,43);const callback=await worker.fetch(req(`/auth/callback?code=mock-code&state=${encodeURIComponent(authorize.searchParams.get('state'))}`,{headers:{Cookie:oauth}}),env);return {callback,cookies:callback.headers.getSetCookie()};}finally{globalThis.fetch=old;}
 }
 const sessionFrom=cookies=>cookies.map(x=>x.split(';')[0]).find(x=>x.startsWith('__Host-huda_session='));

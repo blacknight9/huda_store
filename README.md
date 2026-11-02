@@ -17,7 +17,7 @@ The admin UI is included in the static build at `/admin/`. It becomes operationa
 
 ## Online admin security model
 
-The **Sign in with GitHub** flow uses GitHub App OAuth authorization code plus PKCE and state. The Worker exchanges the code, verifies GitHub's numeric account ID (`22123586` for `blacknight9`), then discards the OAuth user token. Each repository operation uses a short-lived GitHub App installation token minted inside the Worker from its private key. The browser receives only a signed, two-hour HttpOnly session cookie and a CSRF token held in page memory. The Worker validates the session, exact allowed Origin, and CSRF token on every write. A stale catalog commit SHA returns a conflict, and the Git ref update is non-forced.
+The **Sign in with GitHub** flow uses GitHub App OAuth authorization code plus PKCE and state. The Worker exchanges the code, verifies GitHub's numeric account ID (`351334834` for `hudastoreus`), then discards the OAuth user token. Each repository operation uses a short-lived GitHub App installation token minted inside the Worker from its private key. The browser receives only a signed, two-hour HttpOnly session cookie and a CSRF token held in page memory. The Worker validates the session, exact allowed Origin, and CSRF token on every write. A stale catalog commit SHA returns a conflict, and the Git ref update is non-forced.
 
 No GitHub credential belongs in `public/`, browser storage, or committed config. The Worker rate limits requests per isolate on a best-effort basis; Cloudflare may run multiple isolates, so these in-memory limits are not a global quota. Do not enable preview environments with production secrets.
 
@@ -26,10 +26,10 @@ Sessions are stateless, so logout clears the browser cookie and access ends afte
 ### GitHub App setup
 
 1. At <https://github.com/settings/apps/new>, create a GitHub App named **Huda Store Admin**. Set the homepage to the catalog URL. Leave webhooks disabled. Enable **Request user authorization (OAuth) during installation**.
-2. Set the callback URL to `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev/auth/callback`. The Worker URL is fixed by its name and your Cloudflare `workers.dev` subdomain. Use that identical callback in `wrangler.jsonc` and the GitHub App settings.
-3. Grant repository permissions: **Contents: Read and write**. Metadata remains read-only. Do not grant Actions, Administration, or other permissions. Install the App only on `blacknight9/huda_store`.
+2. Set the callback URL to `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev/auth/callback`. The Worker URL is fixed by its name and your Cloudflare `workers.dev` subdomain. Use that identical callback in the GitHub App settings and the Cloudflare `OAUTH_CALLBACK_URL` production variable.
+3. Grant repository permissions: **Contents: Read and write**. Metadata remains read-only. Do not grant Actions, Administration, or other permissions. Install the App only on `hudastoreus/huda_store`.
 4. Record the App ID and Client ID. Create a client secret. Under the App installation, get its installation ID (for example, `gh api /user/installations --jq '.installations[] | select(.app_slug=="huda-store-admin") | .id'`). Keep the App private key downloaded securely; do not commit it.
-5. The allowlisted account is pinned in Worker config by immutable GitHub user ID `22123586`. If the authorized human changes, verify the replacement account's numeric ID before changing `ADMIN_GITHUB_USER_ID`.
+5. The allowlisted account is pinned in Worker config by immutable GitHub user ID `351334834`. If the authorized human changes, verify the replacement account's numeric ID before changing `ADMIN_GITHUB_USER_ID`.
 
 ### Cloudflare Worker setup
 
@@ -44,25 +44,25 @@ Sessions are stateless, so logout clears the browser cookie and access ends afte
 
    | Variable | Production value |
    | --- | --- |
-   | `GITHUB_OWNER` | `blacknight9` |
+   | `GITHUB_OWNER` | `hudastoreus` |
    | `GITHUB_REPO` | `huda_store` |
-   | `ADMIN_GITHUB_USER_ID` | `22123586` |
+   | `ADMIN_GITHUB_USER_ID` | `351334834` |
    | `GITHUB_APP_ID` | App ID from the GitHub App settings |
    | `GITHUB_APP_CLIENT_ID` | Client ID from the GitHub App settings |
    | `GITHUB_INSTALLATION_ID` | Installation ID for the app installed on this repository |
-   | `ALLOWED_ORIGIN` | `https://blacknight9.github.io` (origin only; no repository path) |
-   | `PUBLIC_URL` | `https://blacknight9.github.io/huda_store` (no trailing slash) |
+   | `ALLOWED_ORIGIN` | `https://hudastoreus.github.io` (origin only; no repository path) |
+   | `PUBLIC_URL` | `https://hudastoreus.github.io/huda_store` (no trailing slash) |
    | `OAUTH_CALLBACK_URL` | `https://huda-store-admin.<YOUR_WORKERS_DEV_SUBDOMAIN>.workers.dev/auth/callback` |
 
-   Keep all nine values in the **Production** environment. Change the owner/repo and corresponding IDs/URLs there if repository ownership or domains change. Do not restore a `vars` object to `wrangler.jsonc` unless you intentionally want source-controlled values to own those Worker variables. The Worker name stays `huda-store-admin`.
+   Keep all nine values in the **Production** environment. For the repository transfer, change `GITHUB_OWNER`, `ADMIN_GITHUB_USER_ID`, `GITHUB_INSTALLATION_ID` (use the ID for the app newly installed on `hudastoreus/huda_store`), `ALLOWED_ORIGIN`, and `PUBLIC_URL`. `GITHUB_REPO` remains `huda_store`. `GITHUB_APP_ID` and `GITHUB_APP_CLIENT_ID` remain the values for the GitHub App that is retained; if the App is recreated under `hudastoreus`, use its new IDs and replace the related client-secret/private-key secrets as well. The OAuth callback stays the same if the Worker name and Cloudflare account/subdomain stay the same. Do not restore a `vars` object to `wrangler.jsonc` unless you intentionally want source-controlled values to own those Worker variables. The Worker name stays `huda-store-admin`.
 
 3. Add the following three items in the same **Variables and Secrets** screen, each with type **Secret** in the **Production** environment. Enter values in Cloudflare's secret-value field; do not add values to GitHub Actions variables, `.env` files, `wrangler.jsonc`, or source control.
 
    | Secret name | Value to enter |
    | --- | --- |
-   | `GITHUB_CLIENT_SECRET` | OAuth client secret from the GitHub App settings |
-   | `GITHUB_APP_PRIVATE_KEY` | Entire PEM private key generated for the GitHub App, including its `BEGIN` and `END` lines |
-   | `SESSION_SECRET` | A new random signing secret; generate one with `openssl rand -hex 32` and enter the output directly into Cloudflare |
+   | `GITHUB_CLIENT_SECRET` | OAuth client secret from the retained or newly created GitHub App; replace if that App is recreated |
+   | `GITHUB_APP_PRIVATE_KEY` | Entire PEM private key for the GitHub App installation, including its `BEGIN` and `END` lines; replace if the App is recreated |
+   | `SESSION_SECRET` | A random signing secret; generate or rotate with `openssl rand -hex 32` and enter the output directly into Cloudflare |
 
    The `secrets.required` list in `wrangler.jsonc` checks that all three names exist before a Wrangler deploy. Cloudflare stores these as encrypted Worker secrets and does not reveal their values after saving. Never commit or paste the values into a public log.
 
@@ -81,9 +81,9 @@ The OAuth Client Secret, App private key, and session secret names are `GITHUB_C
 
 Keep the existing `.github/workflows/deploy.yml`. In the repository, set **Settings → Pages → Build and deployment → Source → GitHub Actions**. The workflow builds the static site and deploys on commits to `main`. Every admin save is one commit through the Worker GitHub API, so it triggers the same workflow. Product data remains in `src/data/`; product variants are stored under `public/images/<reference>/`, and the logo under `public/images/brand/logo.webp`.
 
-**Current repository limitation:** this repository was previously verified as private, and GitHub rejected Pages activation because the current account plan does not allow Pages for private repositories. To use free Pages, make the repository public, or keep it private and use an eligible GitHub plan. This project has not changed repository visibility or Pages settings, and nothing has been deployed by this setup. Resolve this plan constraint before enabling publication.
+**Pages eligibility:** an earlier setup attempt under the former owner reported that Pages was unavailable for a private repository on that account's plan. Verify `hudastoreus`'s current Pages eligibility and repository visibility in GitHub settings before relying on Pages; this project has not changed either setting.
 
-The Pages URL for the current repository name is `https://blacknight9.github.io/huda_store/`. It will serve only once Pages is eligible and enabled.
+The expected Pages URL for the transferred repository is `https://hudastoreus.github.io/huda_store/`. Confirm Pages is enabled for `hudastoreus/huda_store` and that its Actions workflow succeeds before relying on this URL.
 
 ### Browser cookie limitation
 
